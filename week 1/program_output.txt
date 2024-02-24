@@ -1,0 +1,64 @@
+4.Write an equivalent pointer expression for fetching the value of array element a[i][j][k][2]
+Answer: *(*(*(*(a+i)+j)+k)+2)
+
+6.Find the output of the following 
+#include <stdio.h> 
+typedef struct
+{
+int A;
+char B;
+char C;
+} InfoData: 
+int main(int argc, char *argv[])
+{
+//Calculate size of structure
+printf("\n Size of Structure = %d\n\n",sizeof(InfoData));
+return 0;
+}
+
+OUTPUT:
+Size of Structure = 8
+Explanation:
+Because of the structure padding,the compiler does padding for the remaining two bytes of data to read the data at once
+
+
+7.Find the output
+#include <stdio.h>
+typedef struct
+{
+char A;
+double B;
+char C;
+} InfoData;
+int main(int argc, char *argv[])
+{
+//Calculate size of structure
+printf("\n Size of Structure = %d\n\n",sizeof(InfoData));
+return 0;
+}
+
+OUTPUT:
+Size of the structure = 24
+Explanation:
+For the ease of reading the data,first the variable A is placed inside a stack,where it occupies one byte and the rest seven are padded to align. 
+Next,B occupies 8 byte,hence no padding is needed whereas C would require as much as the padding occupied by B.
+
+
+8.Find the output
+#include <stdio.h>
+#include <stdint.h>
+int main()
+{
+unsigned int var = 0x12345678;
+unsigned int rev = 0;
+for (int i = 0; i < 8; j++)
+{
+rev = (rev << 4) | ((var >> (4*i)) & 0xF);
+}
+printf("%X", rev);
+return 0;
+}
+
+OUTPUT:
+87654321
+Bit endian reversal of an integer
