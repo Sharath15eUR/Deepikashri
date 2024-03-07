@@ -1,0 +1,10 @@
+Queue Operations in C
+
+1.enqueue: Adds an element to the rear of the queue.
+2.dequeue: Removes the element from the front of the queue.
+3.peek: Returns the element at the front of the queue without removing it.
+4.isEmpty: Checks if the queue is empty.
+5.isFull: Checks if the queue is full (for a fixed-size queue).
+6.size: Returns the number of elements currently in the queue.
+7.display: Displays all the elements in the queue.
+8.clear: Removes all elements from the queue, making it empty.
