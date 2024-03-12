@@ -1,0 +1,207 @@
+1.Which signals are triggered,when the following actions are performned .
+
+a.user presses Ctrl + C 
+SIGINT- when the user presses ctrl + c on the ongoing process, the os sends a SIGINT to interrupt the current program.
+The prorgam will exit gracefully allowing to complete the necessary tasks before terminating.
+
+b.kill() system call is invoked
+when kill() is invoked in the program, the singal SIGKILL is communicated to the os.
+This signal allows the os to abrupted the ongoing process and exit without 
+terminating the tasks in an orderly manner.
+
+c.CPU tried to execute an illegal instruction
+The signal SIGILL is to inform the os when an illegal operation takes place.
+It will contain machine code that the CPU can not process.
+
+d.When the program accesses the unassigned memory 
+When an attempt is made to access to the unassigned memory or accessing the memory incorrectly,
+a signal called SIGSEGV 'Segmentation Fault' is sent. It is desgined to notify the os when the program, 
+attempts to access memory that does not belong to it or perform operation that the CPU deems illegal.
+
+2.List the gdb command for the following operations
+
+a.to run the current executable file
+ to run an exe file, 'run' is used. To run the current file with arguments, 'run agr1 arg2' is used
+ depending on the number of arguments.
+
+b.to create breakpoints at
+there are three ways to create a breakpoint that depends upon the location 
+
+'break function_name'- it sets the breakpoint at the beginning of a specified function.
+'break file_name:line_number' - it sets the breakpoint at a specific line in a file
+'break *address' - it sets the breakpoint at a specific memory address
+
+
+c.to resume execution once after breakpoint
+'continue' command is used to resume the execution after a breakpoint until a breakpoint occurs
+
+d.to clear break point created for a function
+'delete breakpoint_number' is used to deleted the breakpoint created for a function
+
+e.print the parameters of the function in the backtrace
+the commnad 'bracktrace' or 'bt' is used to display al the current call stack.
+
+
+
+3.Guess the output
+
+#include<stdio.h>
+#inlcude<unistd.h>
+int main()
+{
+    if(fork() && (!fork()))
+    {
+        if(fork() || fork())
+        {
+            fork();
+        }
+    }
+    printf("2");
+    return 0;
+}
+
+Output:
+2222222
+
+Explanation:
+In the code the output will be 2 printed seven times.
+Using fork(), sub processes can be created and in the program can be customized
+whether to or not to use the parent or the child process. In this program, with the first
+'if' statement, 4 proceeses are created. But further block of code can be exceuted only 
+if the PIDs of the both the process are non-zero. Hence the block of code will be 
+executed once. The second 'if' statement will allow 3 times, allowing the final fork 
+to execute two times each. Hence the block of code following the first if statment will allow the program
+to print the statement 7 times.
+
+
+4.Guess the output
+#include<stdio.h>
+#include<unistd.h>
+
+int main()
+{
+    if(fork()) 
+    {
+        if(!fork()) 
+        {
+            fork(); 
+            printf("1 "); 
+        }
+        else 
+        {
+            printf("2 "); 
+        }
+    }
+    else{
+        printf("3 "); 
+    }
+    printf("4 "); 
+    return 0;
+}
+
+
+Output
+2 4 3 4 1 4 1 4 
+or 
+3 4 2 4 1 4 1 4 
+
+Explanation 
+The order of assigning the parent process or child process first depends upon the 
+scheduling of the os which is mostly non-deterministic.
+Since the '2' and '3' are associated with the first set of parent and child process,
+the orde between '2' and '3' can be swapped while the process runs through the program.
+
+Considering a scenario where the first PID of the fork function is a non-zero number 
+which means it's a parent process and will execute the commands under the if statement.
+The second set of process is invoked when the second if statement is executed and
+it is also a parent process, then the control will be over to the else part of the statement.
+This (1st parent process) is further print '2' and will exits the code by printing '4'.
+
+Now the 1st child process is held at the else part and will execute the else part by 
+printing '3' which futher prints '4' and exits the code.
+
+Now the 2nd child process which is allowed in the second if statement executes the if segment
+by creating yet another 2 processes where it will print '1' followed by '4' at the end and it will be executed 
+twice since it has two proccesses.
+
+
+6.How to avoid deadlock and race condition in C?
+
+deadlock- deadlock in concurrent programming is a state in which two threads wait for 
+each other to release a resource held by each others. This will lead to inability 
+to proceed further until the resource is released.
+It can be avoided by 
+1.using mutex where only one thread can access shared resource at a time
+2.establishing a global oder for acquiring locks and ensure all threads or processes follow the order.
+this will prevent circular waiting
+3.a timeout mechanism for acquiring locks,if exceeds signal will be sent.
+
+
+race condition-it is a condition where the outcome depends on the relative timing 
+of the events of multiple threads acesss a shared variable or resource
+concurrently without proper synchronization.
+Race condition can be prevented by 
+Using mutex to ensure only one thread has access hence synchronization can 
+be achieved.Using 'pthread_mutex_lock' and 'pthread_mutex_unlock' functions ensure that only one thread
+can access the critical section at a time
+
+
+7.What is the difference between exec and fork?
+
+exec-it is a system call that replaces the current calling process with a new program
+
+fork()- it is a system call which duplicates the calling process and creates
+two new processes
+
+fork()                                   |     exec()
+-----------------------------------------|----------------
+it duplicates the current process        | it replaces the current process by creating a new program   |
+-----------------------------------------|------------------
+it creates two new processes:            | it will only replace the old process with the new process
+parent and child                         |
+-----------------------------------------|--------------------
+it shares the memory between             | it creates new memory while creating a new process
+the processes                            | 
+-----------------------------------------|-------------------------------
+it returns twice:                        | it does not return upon successful creation but returns -1 on error
+   - parent process: returns child's     |
+     process pid                         |
+   - child process: always returns 0     |
+returns -1 if error occurs               |
+-----------------------------------------|-------------------------------
+changes to a variable do not             | changes to a variable affects the program
+affect each other                        |
+-----------------------------------------|---------------------------------
+used when in cases such as:              | used in cases when a new program is required
+  - multi threading                      |
+  - spawning child processes             |
+------------------------------------------------------------------------
+
+
+
+8.what is the difference between threads and process
+
+       Threads            |       Processes         
+--------------------------|--------------------------
+ Share the same resources | have separate resources  
+ within the same process  | in different processes   
+--------------------------|--------------------------
+ Communication is easier  | communication requires   
+ as threads share the same | inter-process communication mechanism        
+ memory                   |
+--------------------------|--------------------------
+ Lower overhead due to    | Higher overhead due to   
+ shared resources         | separate resources       
+--------------------------|--------------------------
+ Changes in one thread    | Processes are independent
+ may affect others        | and don't impact each    
+                          | other's execution        
+--------------------------|--------------------------
+ Faster and less          | slower and more resource         
+ resource-intensive       | intensive                        
+--------------------------|--------------------------
+ Limited flexibility due  | more flexibility as      
+ to shared resources      | each process has its own 
+                          | address space            
+--------------------------|--------------------------
+
