@@ -1,0 +1,356 @@
+1.Explain the connection procedure followed in client server communication
+
+To connect two machines in a local network, one machine should act like a server and another should act like client,getting required details from the server
+
+Connection procedure in the server side
+a.socket - creating an endpoint for communication
+b.bind-assigns a local address and port to the socket
+c.listen-server calls the listen function to put the socket in listening mode
+d.accept-it accepts the connection request and returns a file descriptor
+e.read-reads the data sent from the client
+f.write-writes data from server
+g.close-closes the socket
+
+
+
+Connection procedure in the client side
+a.socket-creates a socket for communication endpoint
+b.connect-the client requests the server to initiate the connection while providing a structure containing the server's address
+c.read-read data from connected socket into a buffer
+d.write-writes data from buffer to connected
+e.close-closes the communication socket
+
+
+
+
+2.What is the use of bind()?
+bind() is defined in the library sys/socket.h and it is used by the server side to assign local IP address and port to the socket.It is used in the server side exclusively for preparing the socket to accept connections.The parameters in the function call consists of 
+       bind(sockfd, &serv_addr,sizeof(serv_addr))
+sockfd-it is the file descriptor that is returned by socket()
+serv_addr-the address of the server
+it requires sockaddr structure to specify the information about the IP address and its ports
+
+
+
+3.what is a datagram socket?
+
+there are two types of socket. socket stream and datagram socket.Socket stream is used by TCP connection and datagram socket is used by UDP where the result of the transmission of the message is either 0% or 100%.It is unreliable since it does not guarantee the delivery of the packet due to its connectionless behaviour.Also due to is connectioneless behavious,it is potentially faster than TCP packets.
+
+
+4.Write a server/client model socket program to exchange hello message between 
+them
+
+Server side
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+
+int main() {
+    int server_fd, new_socket, valread;
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
+    char buffer[1024] = {0};
+    char *hello = "Hello from server";
+
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))<0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (listen(server_fd, 3) < 0) {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0) {
+        perror("accept");
+        exit(EXIT_FAILURE);
+    }
+
+    valread = read(new_socket, buffer, 1024);
+    printf("%s\n", buffer);
+    send(new_socket, hello, strlen(hello), 0);
+    printf("Hello message sent\n");
+    return 0;
+}
+
+Client side 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
+#define PORT 8080
+
+int main(int argc, char const *argv[]) {
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char *hello = "Hello from client";
+    char buffer[1024] = {0};
+
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+        printf("\nInvalid address/ Address not supported \n");
+        return -1;
+    }
+
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+
+    send(sock, hello, strlen(hello), 0);
+    printf("Hello message sent\n");
+    valread = read(sock, buffer, 1024);
+    printf("%s\n", buffer);
+    return 0;
+}
+
+Write a TCP server-client program to check if a given string is Palindrome
+
+
+server 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+
+int isPalindrome(char *str) {
+    int len = strlen(str);
+    for (int i = 0; i < len / 2; i++) {
+        if (str[i] != str[len - i - 1]) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int main() {
+    int server_fd, new_socket, valread;
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
+    char buffer[1024] = {0};
+
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))<0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (listen(server_fd, 3) < 0) {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0) {
+        perror("accept");
+        exit(EXIT_FAILURE);
+    }
+
+    valread = read(new_socket, buffer, 1024);
+    printf("Received string: %s\n", buffer);
+
+    if (isPalindrome(buffer)) {
+        send(new_socket, "Palindrome\n", strlen("Palindrome\n"), 0);
+    } else {
+        send(new_socket, "Not a Palindrome\n", strlen("Not a Palindrome\n"), 0);
+    }
+
+    printf("Result sent\n");
+    return 0;
+}
+
+Client
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
+#define PORT 8080
+
+int main(int argc, char const *argv[]) {
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char *input = "level";
+    char buffer[1024] = {0};
+
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+        printf("\nInvalid address/ Address not supported \n");
+        return -1;
+    }
+
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+
+    send(sock, input, strlen(input), 0);
+    printf("String sent\n");
+
+    valread = read(sock, buffer, 1024);
+    printf("Server response: %s\n", buffer);
+    return 0;
+}
+
+Write an example to demonstrate UDP server-client program
+
+
+server
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define MAXLINE 1024
+
+int isPalindrome(char *str) {
+    int len = strlen(str);
+    for (int i = 0; i < len / 2; i++) {
+        if (str[i] != str[len - i - 1]) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int main() {
+    int sockfd;
+    char buffer[MAXLINE];
+    struct sockaddr_in servaddr, cliaddr;
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    memset(&servaddr, 0, sizeof(servaddr));
+    memset(&cliaddr, 0, sizeof(cliaddr));
+
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = INADDR_ANY;
+    servaddr.sin_port = htons(PORT);
+
+    bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr));
+
+    printf("Server listening on port %d...\n", PORT);
+
+    int len, n;
+    len = sizeof(cliaddr);
+
+    while (1) {
+        n = recvfrom(sockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *)&cliaddr, &len);
+        buffer[n] = '\0';
+        printf("Client : %s\n", buffer);
+
+        if (isPalindrome(buffer)) {
+            sendto(sockfd, (const char *)"Palindrome", strlen("Palindrome"), MSG_CONFIRM, (const struct sockaddr *)&cliaddr, len);
+        } else {
+            sendto(sockfd, (const char *)"Not a Palindrome", strlen("Not a Palindrome"), MSG_CONFIRM, (const struct sockaddr *)&cliaddr, len);
+        }
+    }
+
+    return 0;
+}
+
+
+
+client 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+#define MAXLINE 1024
+
+int main() {
+    int sockfd;
+    char buffer[MAXLINE];
+    struct sockaddr_in servaddr;
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    memset(&servaddr, 0, sizeof(servaddr));
+
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(PORT);
+    servaddr.sin_addr.s_addr = INADDR_ANY;
+
+    printf("Enter a string: ");
+    fgets(buffer, MAXLINE, stdin);
+
+    sendto(sockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *)&servaddr, sizeof(servaddr));
+    printf("String sent.\n");
+
+    int n;
+    socklen_t len;
+    n = recvfrom(sockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *)&servaddr, &len);
+    buffer[n] = '\0';
+    printf("Server : %s\n", buffer);
+
+    close(sockfd);
+    return 0;
+}
+
+
+
+
+
